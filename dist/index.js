@@ -377,6 +377,13 @@ module.exports._enoent = enoent;
 
 /***/ }),
 
+/***/ 34:
+/***/ (function(module) {
+
+module.exports = require("https");
+
+/***/ }),
+
 /***/ 39:
 /***/ (function(module) {
 
@@ -1473,105 +1480,37 @@ const github = __importStar(__webpack_require__(469));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const issueCloseMessage = core.getInput('issue-close-message');
-            const prCloseMessage = core.getInput('pr-close-message');
-            if (!issueCloseMessage && !prCloseMessage) {
-                throw new Error('Action must have at least one of issue-close-message or pr-close-message set');
-            }
-            const issuePattern = core.getInput('issue-pattern');
-            const prPattern = core.getInput('pr-pattern');
-            if (!issuePattern && !prPattern) {
-                throw new Error('Action must have at least one of issue-pattern or pr-pattern set');
-            }
             // Get client and context
             const client = new github.GitHub(core.getInput('repo-token', { required: true }));
             const context = github.context;
             const payload = context.payload;
-            if (payload.action !== 'opened') {
-                core.debug('No issue or PR was opened, skipping');
+            core.debug('${payload}');
+            if (payload.action !== 'closed') {
+                core.debug('No PR was closed, skipping');
                 return;
             }
-            // Do nothing if its not a pr or issue
-            const isIssue = !!payload.issue;
-            if (!isIssue && !payload.pull_request) {
-                core.debug('The event that triggered this action was not a pull request or issue, skipping.');
+            const ref = context.payload.ref;
+            const branch = ref.replace(/^refs\/heads\//, '');
+            core.debug('branch: ${branch}');
+            if (branch !== 'master') {
+                core.debug('No master branch, skipping');
+                return;
+            }
+            if (!payload.pull_request) {
+                core.debug('The event that triggered this action was not a pull request, skipping.');
                 return;
             }
             if (!payload.sender) {
                 throw new Error('Internal error, no sender provided by GitHub');
             }
             const issue = context.issue;
-            const patternString = isIssue ? issuePattern : prPattern;
-            if (!patternString) {
-                core.debug('No pattern provided for this type of contribution');
-                return;
-            }
-            const pattern = new RegExp(patternString);
-            const body = getBody(payload);
-            core.debug(`Matching against pattern ${pattern}`);
-            if (body && body.match(pattern)) {
-                core.debug('Body matched. Nothing more to do.');
-                return;
-            }
-            else {
-                core.debug('Body did not match');
-            }
-            // Do nothing if no message set for this type of contribution
-            const closeMessage = isIssue ? issueCloseMessage : prCloseMessage;
-            if (!closeMessage) {
-                core.debug('No close message template provided for this type of contribution');
-                return;
-            }
-            core.debug('Creating message from template');
-            const message = evalTemplate(closeMessage, payload);
-            const issueType = isIssue ? 'issue' : 'pull request';
-            // Add a comment to the appropriate place
-            core.debug(`Adding message: ${message} to ${issueType} ${issue.number}`);
-            if (isIssue) {
-                yield client.issues.createComment({
-                    owner: issue.owner,
-                    repo: issue.repo,
-                    issue_number: issue.number,
-                    body: message
-                });
-                core.debug('Closing issue');
-                yield client.issues.update({
-                    owner: issue.owner,
-                    repo: issue.repo,
-                    issue_number: issue.number,
-                    state: 'closed'
-                });
-            }
-            else {
-                yield client.pulls.createReview({
-                    owner: issue.owner,
-                    repo: issue.repo,
-                    pull_number: issue.number,
-                    body: message,
-                    event: 'COMMENT'
-                });
-                core.debug('Closing PR');
-                yield client.pulls.update({
-                    owner: issue.owner,
-                    repo: issue.repo,
-                    pull_number: issue.number,
-                    state: 'closed'
-                });
-            }
+            const body = payload.pull_request.body;
         }
         catch (error) {
             core.setFailed(error.message);
             return;
         }
     });
-}
-function getBody(payload) {
-    if (payload.issue && payload.issue.body) {
-        return payload.issue.body;
-    }
-    if (payload.pull_request && payload.pull_request.body) {
-        return payload.pull_request.body;
-    }
 }
 function evalTemplate(template, params) {
     return Function(...Object.keys(params), `return \`${template}\``)(...Object.values(params));
@@ -1811,16 +1750,39 @@ function checkMode (stat, options) {
 /***/ }),
 
 /***/ 211:
-/***/ (function(module) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
-module.exports = require("https");
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var osName = _interopDefault(__webpack_require__(2));
+
+function getUserAgent() {
+  try {
+    return `Node.js/${process.version.substr(1)} (${osName()}; ${process.arch})`;
+  } catch (error) {
+    if (/wmic os get Caption/.test(error.message)) {
+      return "Windows <version undetectable>";
+    }
+
+    throw error;
+  }
+}
+
+exports.getUserAgent = getUserAgent;
+//# sourceMappingURL=index.js.map
+
 
 /***/ }),
 
 /***/ 215:
 /***/ (function(module) {
 
-module.exports = {"_from":"@octokit/rest@^16.15.0","_id":"@octokit/rest@16.28.7","_inBundle":false,"_integrity":"sha512-cznFSLEhh22XD3XeqJw51OLSfyL2fcFKUO+v2Ep9MTAFfFLS1cK1Zwd1yEgQJmJoDnj4/vv3+fGGZweG+xsbIA==","_location":"/@octokit/rest","_phantomChildren":{"os-name":"3.1.0"},"_requested":{"type":"range","registry":true,"raw":"@octokit/rest@^16.15.0","name":"@octokit/rest","escapedName":"@octokit%2frest","scope":"@octokit","rawSpec":"^16.15.0","saveSpec":null,"fetchSpec":"^16.15.0"},"_requiredBy":["/@actions/github"],"_resolved":"https://registry.npmjs.org/@octokit/rest/-/rest-16.28.7.tgz","_shasum":"a2c2db5b318da84144beba82d19c1a9dbdb1a1fa","_spec":"@octokit/rest@^16.15.0","_where":"/Users/scott/dev/issue-closer/node_modules/@actions/github","author":{"name":"Gregor Martynus","url":"https://github.com/gr2m"},"bugs":{"url":"https://github.com/octokit/rest.js/issues"},"bundleDependencies":false,"bundlesize":[{"path":"./dist/octokit-rest.min.js.gz","maxSize":"33 kB"}],"contributors":[{"name":"Mike de Boer","email":"info@mikedeboer.nl"},{"name":"Fabian Jakobs","email":"fabian@c9.io"},{"name":"Joe Gallo","email":"joe@brassafrax.com"},{"name":"Gregor Martynus","url":"https://github.com/gr2m"}],"dependencies":{"@octokit/request":"^5.0.0","@octokit/request-error":"^1.0.2","atob-lite":"^2.0.0","before-after-hook":"^2.0.0","btoa-lite":"^1.0.0","deprecation":"^2.0.0","lodash.get":"^4.4.2","lodash.set":"^4.3.2","lodash.uniq":"^4.5.0","octokit-pagination-methods":"^1.1.0","once":"^1.4.0","universal-user-agent":"^3.0.0","url-template":"^2.0.8"},"deprecated":false,"description":"GitHub REST API client for Node.js","devDependencies":{"@gimenete/type-writer":"^0.1.3","@octokit/fixtures-server":"^5.0.1","@octokit/routes":"20.9.2","@types/node":"^12.0.0","bundlesize":"^0.18.0","chai":"^4.1.2","compression-webpack-plugin":"^3.0.0","coveralls":"^3.0.0","glob":"^7.1.2","http-proxy-agent":"^2.1.0","lodash.camelcase":"^4.3.0","lodash.merge":"^4.6.1","lodash.upperfirst":"^4.3.1","mkdirp":"^0.5.1","mocha":"^6.0.0","mustache":"^3.0.0","nock":"^10.0.0","npm-run-all":"^4.1.2","nyc":"^14.0.0","prettier":"^1.14.2","proxy":"^0.2.4","semantic-release":"^15.0.0","sinon":"^7.2.4","sinon-chai":"^3.0.0","sort-keys":"^3.0.0","standard":"^13.0.1","string-to-arraybuffer":"^1.0.0","string-to-jsdoc-comment":"^1.0.0","typescript":"^3.3.1","webpack":"^4.0.0","webpack-bundle-analyzer":"^3.0.0","webpack-cli":"^3.0.0"},"files":["index.js","index.d.ts","lib","plugins"],"homepage":"https://github.com/octokit/rest.js#readme","keywords":["octokit","github","rest","api-client"],"license":"MIT","name":"@octokit/rest","nyc":{"ignore":["test"]},"publishConfig":{"access":"public"},"release":{"publish":["@semantic-release/npm",{"path":"@semantic-release/github","assets":["dist/*","!dist/*.map.gz"]}]},"repository":{"type":"git","url":"git+https://github.com/octokit/rest.js.git"},"scripts":{"build":"npm-run-all build:*","build:browser":"npm-run-all build:browser:*","build:browser:development":"webpack --mode development --entry . --output-library=Octokit --output=./dist/octokit-rest.js --profile --json > dist/bundle-stats.json","build:browser:production":"webpack --mode production --entry . --plugin=compression-webpack-plugin --output-library=Octokit --output-path=./dist --output-filename=octokit-rest.min.js --devtool source-map","build:ts":"node scripts/generate-types","coverage":"nyc report --reporter=html && open coverage/index.html","generate-bundle-report":"webpack-bundle-analyzer dist/bundle-stats.json --mode=static --no-open --report dist/bundle-report.html","generate-routes":"node scripts/generate-routes","postvalidate:ts":"tsc --noEmit --target es6 test/typescript-validate.ts","prebuild:browser":"mkdirp dist/","pretest":"standard","prevalidate:ts":"npm run -s build:ts","start-fixtures-server":"octokit-fixtures-server","test":"nyc mocha test/mocha-node-setup.js \"test/*/**/*-test.js\"","test:browser":"cypress run --browser chrome","test:memory":"mocha test/memory-test","validate:ts":"tsc --target es6 --noImplicitAny index.d.ts"},"standard":{"globals":["describe","before","beforeEach","afterEach","after","it","expect","cy"],"ignore":["/docs"]},"types":"index.d.ts","version":"16.28.7"};
+module.exports = {"_from":"@octokit/rest@^16.15.0","_id":"@octokit/rest@16.28.9","_inBundle":false,"_integrity":"sha512-IKGnX+Tvzt7XHhs8f4ajqxyJvYAMNX5nWfoJm4CQj8LZToMiaJgutf5KxxpxoC3y5w7JTJpW5rnWnF4TsIvCLA==","_location":"/@octokit/rest","_phantomChildren":{"os-name":"3.1.0"},"_requested":{"type":"range","registry":true,"raw":"@octokit/rest@^16.15.0","name":"@octokit/rest","escapedName":"@octokit%2frest","scope":"@octokit","rawSpec":"^16.15.0","saveSpec":null,"fetchSpec":"^16.15.0"},"_requiredBy":["/@actions/github"],"_resolved":"https://registry.npmjs.org/@octokit/rest/-/rest-16.28.9.tgz","_shasum":"ac8c5f3ff305e9e0a0989a5245e4286f057a95d7","_spec":"@octokit/rest@^16.15.0","_where":"/Users/mikolaj/dev/js/changelogger/node_modules/@actions/github","author":{"name":"Gregor Martynus","url":"https://github.com/gr2m"},"bugs":{"url":"https://github.com/octokit/rest.js/issues"},"bundleDependencies":false,"bundlesize":[{"path":"./dist/octokit-rest.min.js.gz","maxSize":"33 kB"}],"contributors":[{"name":"Mike de Boer","email":"info@mikedeboer.nl"},{"name":"Fabian Jakobs","email":"fabian@c9.io"},{"name":"Joe Gallo","email":"joe@brassafrax.com"},{"name":"Gregor Martynus","url":"https://github.com/gr2m"}],"dependencies":{"@octokit/request":"^5.0.0","@octokit/request-error":"^1.0.2","atob-lite":"^2.0.0","before-after-hook":"^2.0.0","btoa-lite":"^1.0.0","deprecation":"^2.0.0","lodash.get":"^4.4.2","lodash.set":"^4.3.2","lodash.uniq":"^4.5.0","octokit-pagination-methods":"^1.1.0","once":"^1.4.0","universal-user-agent":"^4.0.0"},"deprecated":false,"description":"GitHub REST API client for Node.js","devDependencies":{"@gimenete/type-writer":"^0.1.3","@octokit/fixtures-server":"^5.0.1","@octokit/routes":"20.9.2","@types/node":"^12.0.0","bundlesize":"^0.18.0","chai":"^4.1.2","compression-webpack-plugin":"^3.0.0","coveralls":"^3.0.0","glob":"^7.1.2","http-proxy-agent":"^2.1.0","lodash.camelcase":"^4.3.0","lodash.merge":"^4.6.1","lodash.upperfirst":"^4.3.1","mkdirp":"^0.5.1","mocha":"^6.0.0","mustache":"^3.0.0","nock":"^10.0.0","npm-run-all":"^4.1.2","nyc":"^14.0.0","prettier":"^1.14.2","proxy":"^0.2.4","semantic-release":"^15.0.0","sinon":"^7.2.4","sinon-chai":"^3.0.0","sort-keys":"^4.0.0","standard":"^14.0.2","string-to-arraybuffer":"^1.0.0","string-to-jsdoc-comment":"^1.0.0","typescript":"^3.3.1","webpack":"^4.0.0","webpack-bundle-analyzer":"^3.0.0","webpack-cli":"^3.0.0"},"files":["index.js","index.d.ts","lib","plugins"],"homepage":"https://github.com/octokit/rest.js#readme","keywords":["octokit","github","rest","api-client"],"license":"MIT","name":"@octokit/rest","nyc":{"ignore":["test"]},"publishConfig":{"access":"public"},"release":{"publish":["@semantic-release/npm",{"path":"@semantic-release/github","assets":["dist/*","!dist/*.map.gz"]}]},"repository":{"type":"git","url":"git+https://github.com/octokit/rest.js.git"},"scripts":{"build":"npm-run-all build:*","build:browser":"npm-run-all build:browser:*","build:browser:development":"webpack --mode development --entry . --output-library=Octokit --output=./dist/octokit-rest.js --profile --json > dist/bundle-stats.json","build:browser:production":"webpack --mode production --entry . --plugin=compression-webpack-plugin --output-library=Octokit --output-path=./dist --output-filename=octokit-rest.min.js --devtool source-map","build:ts":"node scripts/generate-types","coverage":"nyc report --reporter=html && open coverage/index.html","generate-bundle-report":"webpack-bundle-analyzer dist/bundle-stats.json --mode=static --no-open --report dist/bundle-report.html","generate-routes":"node scripts/generate-routes","postvalidate:ts":"tsc --noEmit --target es6 test/typescript-validate.ts","prebuild:browser":"mkdirp dist/","pretest":"standard","prevalidate:ts":"npm run -s build:ts","start-fixtures-server":"octokit-fixtures-server","test":"nyc mocha test/mocha-node-setup.js \"test/*/**/*-test.js\"","test:browser":"cypress run --browser chrome","test:memory":"mocha test/memory-test","validate:ts":"tsc --target es6 --noImplicitAny index.d.ts"},"standard":{"globals":["describe","before","beforeEach","afterEach","after","it","expect","cy"],"ignore":["/docs"]},"types":"index.d.ts","version":"16.28.9"};
 
 /***/ }),
 
@@ -2002,43 +1964,28 @@ function processEmit (ev, arg) {
 
 /***/ }),
 
-/***/ 261:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-module.exports = getUserAgentNode
-
-const osName = __webpack_require__(2)
-
-function getUserAgentNode () {
-  try {
-    return `Node.js/${process.version.substr(1)} (${osName()}; ${process.arch})`
-  } catch (error) {
-    if (/wmic os get Caption/.test(error.message)) {
-      return 'Windows <version undetectable>'
-    }
-
-    throw error
-  }
-}
-
-
-/***/ }),
-
 /***/ 262:
-/***/ (function(__unusedmodule, exports) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-/* eslint-disable @typescript-eslint/no-require-imports */
+const fs_1 = __webpack_require__(747);
+const os_1 = __webpack_require__(87);
 class Context {
     /**
      * Hydrate the context from the environment
      */
     constructor() {
-        this.payload = process.env.GITHUB_EVENT_PATH
-            ? require(process.env.GITHUB_EVENT_PATH)
-            : {};
+        this.payload = {};
+        if (process.env.GITHUB_EVENT_PATH) {
+            if (fs_1.existsSync(process.env.GITHUB_EVENT_PATH)) {
+                this.payload = JSON.parse(fs_1.readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: 'utf8' }));
+            }
+            else {
+                process.stdout.write(`GITHUB_EVENT_PATH ${process.env.GITHUB_EVENT_PATH} does not exist${os_1.EOL}`);
+            }
+        }
         this.eventName = process.env.GITHUB_EVENT_NAME;
         this.sha = process.env.GITHUB_SHA;
         this.ref = process.env.GITHUB_REF;
@@ -2048,7 +1995,7 @@ class Context {
     }
     get issue() {
         const payload = this.payload;
-        return Object.assign({}, this.repo, { number: (payload.issue || payload.pullRequest || payload).number });
+        return Object.assign(Object.assign({}, this.repo), { number: (payload.issue || payload.pullRequest || payload).number });
     }
     get repo() {
         if (process.env.GITHUB_REPOSITORY) {
@@ -3664,7 +3611,7 @@ function authenticationRequestError (state, error, options) {
 module.exports = parseOptions
 
 const { Deprecation } = __webpack_require__(692)
-const getUserAgent = __webpack_require__(794)
+const { getUserAgent } = __webpack_require__(619)
 const once = __webpack_require__(969)
 
 const pkg = __webpack_require__(215)
@@ -3912,7 +3859,7 @@ function octokitRestNormalizeGitReferenceResponses (octokit) {
 /***/ 314:
 /***/ (function(module) {
 
-module.exports = {"_from":"@octokit/graphql@^2.0.1","_id":"@octokit/graphql@2.1.3","_inBundle":false,"_integrity":"sha512-XoXJqL2ondwdnMIW3wtqJWEwcBfKk37jO/rYkoxNPEVeLBDGsGO1TCWggrAlq3keGt/O+C/7VepXnukUxwt5vA==","_location":"/@octokit/graphql","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"@octokit/graphql@^2.0.1","name":"@octokit/graphql","escapedName":"@octokit%2fgraphql","scope":"@octokit","rawSpec":"^2.0.1","saveSpec":null,"fetchSpec":"^2.0.1"},"_requiredBy":["/@actions/github"],"_resolved":"https://registry.npmjs.org/@octokit/graphql/-/graphql-2.1.3.tgz","_shasum":"60c058a0ed5fa242eca6f938908d95fd1a2f4b92","_spec":"@octokit/graphql@^2.0.1","_where":"/Users/scott/dev/issue-closer/node_modules/@actions/github","author":{"name":"Gregor Martynus","url":"https://github.com/gr2m"},"bugs":{"url":"https://github.com/octokit/graphql.js/issues"},"bundleDependencies":false,"bundlesize":[{"path":"./dist/octokit-graphql.min.js.gz","maxSize":"5KB"}],"dependencies":{"@octokit/request":"^5.0.0","universal-user-agent":"^2.0.3"},"deprecated":false,"description":"GitHub GraphQL API client for browsers and Node","devDependencies":{"chai":"^4.2.0","compression-webpack-plugin":"^2.0.0","coveralls":"^3.0.3","cypress":"^3.1.5","fetch-mock":"^7.3.1","mkdirp":"^0.5.1","mocha":"^6.0.0","npm-run-all":"^4.1.3","nyc":"^14.0.0","semantic-release":"^15.13.3","simple-mock":"^0.8.0","standard":"^12.0.1","webpack":"^4.29.6","webpack-bundle-analyzer":"^3.1.0","webpack-cli":"^3.2.3"},"files":["lib"],"homepage":"https://github.com/octokit/graphql.js#readme","keywords":["octokit","github","api","graphql"],"license":"MIT","main":"index.js","name":"@octokit/graphql","publishConfig":{"access":"public"},"release":{"publish":["@semantic-release/npm",{"path":"@semantic-release/github","assets":["dist/*","!dist/*.map.gz"]}]},"repository":{"type":"git","url":"git+https://github.com/octokit/graphql.js.git"},"scripts":{"build":"npm-run-all build:*","build:development":"webpack --mode development --entry . --output-library=octokitGraphql --output=./dist/octokit-graphql.js --profile --json > dist/bundle-stats.json","build:production":"webpack --mode production --entry . --plugin=compression-webpack-plugin --output-library=octokitGraphql --output-path=./dist --output-filename=octokit-graphql.min.js --devtool source-map","bundle-report":"webpack-bundle-analyzer dist/bundle-stats.json --mode=static --no-open --report dist/bundle-report.html","coverage":"nyc report --reporter=html && open coverage/index.html","coverage:upload":"nyc report --reporter=text-lcov | coveralls","prebuild":"mkdirp dist/","pretest":"standard","test":"nyc mocha test/*-test.js","test:browser":"cypress run --browser chrome"},"standard":{"globals":["describe","before","beforeEach","afterEach","after","it","expect"]},"version":"2.1.3"};
+module.exports = {"_from":"@octokit/graphql@^2.0.1","_id":"@octokit/graphql@2.1.3","_inBundle":false,"_integrity":"sha512-XoXJqL2ondwdnMIW3wtqJWEwcBfKk37jO/rYkoxNPEVeLBDGsGO1TCWggrAlq3keGt/O+C/7VepXnukUxwt5vA==","_location":"/@octokit/graphql","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"@octokit/graphql@^2.0.1","name":"@octokit/graphql","escapedName":"@octokit%2fgraphql","scope":"@octokit","rawSpec":"^2.0.1","saveSpec":null,"fetchSpec":"^2.0.1"},"_requiredBy":["/@actions/github"],"_resolved":"https://registry.npmjs.org/@octokit/graphql/-/graphql-2.1.3.tgz","_shasum":"60c058a0ed5fa242eca6f938908d95fd1a2f4b92","_spec":"@octokit/graphql@^2.0.1","_where":"/Users/mikolaj/dev/js/changelogger/node_modules/@actions/github","author":{"name":"Gregor Martynus","url":"https://github.com/gr2m"},"bugs":{"url":"https://github.com/octokit/graphql.js/issues"},"bundleDependencies":false,"bundlesize":[{"path":"./dist/octokit-graphql.min.js.gz","maxSize":"5KB"}],"dependencies":{"@octokit/request":"^5.0.0","universal-user-agent":"^2.0.3"},"deprecated":false,"description":"GitHub GraphQL API client for browsers and Node","devDependencies":{"chai":"^4.2.0","compression-webpack-plugin":"^2.0.0","coveralls":"^3.0.3","cypress":"^3.1.5","fetch-mock":"^7.3.1","mkdirp":"^0.5.1","mocha":"^6.0.0","npm-run-all":"^4.1.3","nyc":"^14.0.0","semantic-release":"^15.13.3","simple-mock":"^0.8.0","standard":"^12.0.1","webpack":"^4.29.6","webpack-bundle-analyzer":"^3.1.0","webpack-cli":"^3.2.3"},"files":["lib"],"homepage":"https://github.com/octokit/graphql.js#readme","keywords":["octokit","github","api","graphql"],"license":"MIT","main":"index.js","name":"@octokit/graphql","publishConfig":{"access":"public"},"release":{"publish":["@semantic-release/npm",{"path":"@semantic-release/github","assets":["dist/*","!dist/*.map.gz"]}]},"repository":{"type":"git","url":"git+https://github.com/octokit/graphql.js.git"},"scripts":{"build":"npm-run-all build:*","build:development":"webpack --mode development --entry . --output-library=octokitGraphql --output=./dist/octokit-graphql.js --profile --json > dist/bundle-stats.json","build:production":"webpack --mode production --entry . --plugin=compression-webpack-plugin --output-library=octokitGraphql --output-path=./dist --output-filename=octokit-graphql.min.js --devtool source-map","bundle-report":"webpack-bundle-analyzer dist/bundle-stats.json --mode=static --no-open --report dist/bundle-report.html","coverage":"nyc report --reporter=html && open coverage/index.html","coverage:upload":"nyc report --reporter=text-lcov | coveralls","prebuild":"mkdirp dist/","pretest":"standard","test":"nyc mocha test/*-test.js","test:browser":"cypress run --browser chrome"},"standard":{"globals":["describe","before","beforeEach","afterEach","after","it","expect"]},"version":"2.1.3"};
 
 /***/ }),
 
@@ -4206,7 +4153,7 @@ module.exports = octokitDebug
 
 function octokitDebug (octokit) {
   octokit.hook.wrap('request', (request, options) => {
-    octokit.log.debug(`request`, options)
+    octokit.log.debug('request', options)
     const start = Date.now()
     const requestOptions = octokit.request.endpoint.parse(options)
     const path = requestOptions.url.replace(options.baseUrl, '')
@@ -4238,10 +4185,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var deepmerge = _interopDefault(__webpack_require__(867));
 var isPlainObject = _interopDefault(__webpack_require__(696));
-var urlTemplate = _interopDefault(__webpack_require__(714));
-var getUserAgent = _interopDefault(__webpack_require__(746));
+var universalUserAgent = __webpack_require__(562);
 
 function lowercaseKeys(object) {
   if (!object) {
@@ -4252,6 +4197,22 @@ function lowercaseKeys(object) {
     newObj[key.toLowerCase()] = object[key];
     return newObj;
   }, {});
+}
+
+function mergeDeep(defaults, options) {
+  const result = Object.assign({}, defaults);
+  Object.keys(options).forEach(key => {
+    if (isPlainObject(options[key])) {
+      if (!(key in defaults)) Object.assign(result, {
+        [key]: options[key]
+      });else result[key] = mergeDeep(defaults[key], options[key]);
+    } else {
+      Object.assign(result, {
+        [key]: options[key]
+      });
+    }
+  });
+  return result;
 }
 
 function merge(defaults, route, options) {
@@ -4269,9 +4230,7 @@ function merge(defaults, route, options) {
 
 
   options.headers = lowercaseKeys(options.headers);
-  const mergedOptions = deepmerge.all([defaults, options].filter(Boolean), {
-    isMergeableObject: isPlainObject
-  }); // mediaType.previews arrays are merged, instead of overwritten
+  const mergedOptions = mergeDeep(defaults || {}, options); // mediaType.previews arrays are merged, instead of overwritten
 
   if (defaults && defaults.mediaType.previews.length) {
     mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(preview => !mergedOptions.mediaType.previews.includes(preview)).concat(mergedOptions.mediaType.previews);
@@ -4321,6 +4280,173 @@ function omit(object, keysToOmit) {
   }, {});
 }
 
+// Based on https://github.com/bramstein/url-template, licensed under BSD
+// TODO: create separate package.
+//
+// Copyright (c) 2012-2014, Bram Stein
+// All rights reserved.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//  1. Redistributions of source code must retain the above copyright
+//     notice, this list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
+//     documentation and/or other materials provided with the distribution.
+//  3. The name of the author may not be used to endorse or promote products
+//     derived from this software without specific prior written permission.
+// THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED
+// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+// EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+/* istanbul ignore file */
+function encodeReserved(str) {
+  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function (part) {
+    if (!/%[0-9A-Fa-f]/.test(part)) {
+      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
+    }
+
+    return part;
+  }).join("");
+}
+
+function encodeUnreserved(str) {
+  return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
+    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
+  });
+}
+
+function encodeValue(operator, value, key) {
+  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
+
+  if (key) {
+    return encodeUnreserved(key) + "=" + value;
+  } else {
+    return value;
+  }
+}
+
+function isDefined(value) {
+  return value !== undefined && value !== null;
+}
+
+function isKeyOperator(operator) {
+  return operator === ";" || operator === "&" || operator === "?";
+}
+
+function getValues(context, operator, key, modifier) {
+  var value = context[key],
+      result = [];
+
+  if (isDefined(value) && value !== "") {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      value = value.toString();
+
+      if (modifier && modifier !== "*") {
+        value = value.substring(0, parseInt(modifier, 10));
+      }
+
+      result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
+    } else {
+      if (modifier === "*") {
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function (value) {
+            result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
+          });
+        } else {
+          Object.keys(value).forEach(function (k) {
+            if (isDefined(value[k])) {
+              result.push(encodeValue(operator, value[k], k));
+            }
+          });
+        }
+      } else {
+        const tmp = [];
+
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function (value) {
+            tmp.push(encodeValue(operator, value));
+          });
+        } else {
+          Object.keys(value).forEach(function (k) {
+            if (isDefined(value[k])) {
+              tmp.push(encodeUnreserved(k));
+              tmp.push(encodeValue(operator, value[k].toString()));
+            }
+          });
+        }
+
+        if (isKeyOperator(operator)) {
+          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
+        } else if (tmp.length !== 0) {
+          result.push(tmp.join(","));
+        }
+      }
+    }
+  } else {
+    if (operator === ";") {
+      if (isDefined(value)) {
+        result.push(encodeUnreserved(key));
+      }
+    } else if (value === "" && (operator === "&" || operator === "?")) {
+      result.push(encodeUnreserved(key) + "=");
+    } else if (value === "") {
+      result.push("");
+    }
+  }
+
+  return result;
+}
+
+function parseUrl(template) {
+  return {
+    expand: expand.bind(null, template)
+  };
+}
+
+function expand(template, context) {
+  var operators = ["+", "#", ".", "/", ";", "?", "&"];
+  return template.replace(/\{([^\{\}]+)\}|([^\{\}]+)/g, function (_, expression, literal) {
+    if (expression) {
+      let operator = "";
+      const values = [];
+
+      if (operators.indexOf(expression.charAt(0)) !== -1) {
+        operator = expression.charAt(0);
+        expression = expression.substr(1);
+      }
+
+      expression.split(/,/g).forEach(function (variable) {
+        var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
+        values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
+      });
+
+      if (operator && operator !== "+") {
+        var separator = ",";
+
+        if (operator === "?") {
+          separator = "&";
+        } else if (operator !== "#") {
+          separator = operator;
+        }
+
+        return (values.length !== 0 ? operator : "") + values.join(separator);
+      } else {
+        return values.join(",");
+      }
+    } else {
+      return encodeReserved(literal);
+    }
+  });
+}
+
 function parse(options) {
   // https://fetch.spec.whatwg.org/#methods
   let method = options.method.toUpperCase(); // replace :varname with {varname} to make it RFC 6570 compatible
@@ -4331,7 +4457,7 @@ function parse(options) {
   let parameters = omit(options, ["method", "baseUrl", "url", "headers", "request", "mediaType"]); // extract variable names from URL to calculate remaining variables later
 
   const urlVariableNames = extractUrlVariableNames(url);
-  url = urlTemplate.parse(url).expand(parameters);
+  url = parseUrl(url).expand(parameters);
 
   if (!/^http/.test(url)) {
     url = options.baseUrl + url;
@@ -4412,7 +4538,7 @@ function withDefaults(oldDefaults, newDefaults) {
 
 const VERSION = "0.0.0-development";
 
-const userAgent = `octokit-endpoint.js/${VERSION} ${getUserAgent()}`;
+const userAgent = `octokit-endpoint.js/${VERSION} ${universalUserAgent.getUserAgent()}`;
 const DEFAULTS = {
   method: "GET",
   baseUrl: "https://api.github.com",
@@ -4429,6 +4555,7 @@ const DEFAULTS = {
 const endpoint = withDefaults(null, DEFAULTS);
 
 exports.endpoint = endpoint;
+//# sourceMappingURL=index.js.map
 
 
 /***/ }),
@@ -4589,14 +4716,14 @@ const os = __webpack_require__(87);
  *
  * Examples:
  *   ##[warning]This is the user warning message
- *   ##[set-secret name=mypassword]definatelyNotAPassword!
+ *   ##[set-secret name=mypassword]definitelyNotAPassword!
  */
 function issueCommand(command, properties, message) {
     const cmd = new Command(command, properties, message);
     process.stdout.write(cmd.toString() + os.EOL);
 }
 exports.issueCommand = issueCommand;
-function issue(name, message) {
+function issue(name, message = '') {
     issueCommand(name, {}, message);
 }
 exports.issue = issue;
@@ -4749,7 +4876,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var Stream = _interopDefault(__webpack_require__(413));
 var http = _interopDefault(__webpack_require__(605));
 var Url = _interopDefault(__webpack_require__(835));
-var https = _interopDefault(__webpack_require__(211));
+var https = _interopDefault(__webpack_require__(34));
 var zlib = _interopDefault(__webpack_require__(761));
 
 // Based on https://github.com/tmpvar/jsdom/blob/aa85b2abf07766ff7bf5c1f6daafb3726f2f2db5/lib/jsdom/living/blob.js
@@ -6525,8 +6652,8 @@ const Context = __importStar(__webpack_require__(262));
 rest_1.default.prototype = new rest_1.default();
 exports.context = new Context.Context();
 class GitHub extends rest_1.default {
-    constructor(token) {
-        super({ auth: `token ${token}` });
+    constructor(token, opts = {}) {
+        super(Object.assign(Object.assign({}, opts), { auth: `token ${token}` }));
         this.graphql = graphql_1.defaults({
             headers: { authorization: `token ${token}` }
         });
@@ -6542,6 +6669,15 @@ exports.GitHub = GitHub;
 
 "use strict";
 
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const command_1 = __webpack_require__(431);
 const path = __webpack_require__(622);
@@ -6579,7 +6715,10 @@ exports.exportVariable = exportVariable;
  */
 function exportSecret(name, val) {
     exportVariable(name, val);
+    // the runner will error with not implemented
+    // leaving the function but raising the error earlier
     command_1.issueCommand('set-secret', {}, val);
+    throw new Error('Not implemented.');
 }
 exports.exportSecret = exportSecret;
 /**
@@ -6656,6 +6795,46 @@ function warning(message) {
     command_1.issue('warning', message);
 }
 exports.warning = warning;
+/**
+ * Begin an output group.
+ *
+ * Output until the next `groupEnd` will be foldable in this group
+ *
+ * @param name The name of the output group
+ */
+function startGroup(name) {
+    command_1.issue('group', name);
+}
+exports.startGroup = startGroup;
+/**
+ * End an output group.
+ */
+function endGroup() {
+    command_1.issue('endgroup');
+}
+exports.endGroup = endGroup;
+/**
+ * Wrap an asynchronous function call in a group.
+ *
+ * Returns the same type as the function itself.
+ *
+ * @param name The name of the group
+ * @param fn The function to wrap in the group
+ */
+function group(name, fn) {
+    return __awaiter(this, void 0, void 0, function* () {
+        startGroup(name);
+        let result;
+        try {
+            result = yield fn();
+        }
+        finally {
+            endGroup();
+        }
+        return result;
+    });
+}
+exports.group = group;
 //# sourceMappingURL=core.js.map
 
 /***/ }),
@@ -6675,20 +6854,20 @@ function authenticationBeforeRequest (state, options) {
 
   if (state.auth.type === 'basic') {
     const hash = btoa(`${state.auth.username}:${state.auth.password}`)
-    options.headers['authorization'] = `Basic ${hash}`
+    options.headers.authorization = `Basic ${hash}`
     return
   }
 
   if (state.auth.type === 'token') {
-    options.headers['authorization'] = `token ${state.auth.token}`
+    options.headers.authorization = `token ${state.auth.token}`
     return
   }
 
   if (state.auth.type === 'app') {
-    options.headers['authorization'] = `Bearer ${state.auth.token}`
-    const acceptHeaders = options.headers['accept'].split(',')
+    options.headers.authorization = `Bearer ${state.auth.token}`
+    const acceptHeaders = options.headers.accept.split(',')
       .concat('application/vnd.github.machine-man-preview+json')
-    options.headers['accept'] = uniq(acceptHeaders).filter(Boolean).join(',')
+    options.headers.accept = uniq(acceptHeaders).filter(Boolean).join(',')
     return
   }
 
@@ -7000,6 +7179,36 @@ function hasPreviousPage (link) {
 
 /***/ }),
 
+/***/ 562:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var osName = _interopDefault(__webpack_require__(2));
+
+function getUserAgent() {
+  try {
+    return `Node.js/${process.version.substr(1)} (${osName()}; ${process.arch})`;
+  } catch (error) {
+    if (/wmic os get Caption/.test(error.message)) {
+      return "Windows <version undetectable>";
+    }
+
+    throw error;
+  }
+}
+
+exports.getUserAgent = getUserAgent;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
 /***/ 563:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -7223,6 +7432,36 @@ module.exports = Octokit.plugin(CORE_PLUGINS)
 /***/ (function(module) {
 
 module.exports = require("events");
+
+/***/ }),
+
+/***/ 619:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var osName = _interopDefault(__webpack_require__(2));
+
+function getUserAgent() {
+  try {
+    return `Node.js/${process.version.substr(1)} (${osName()}; ${process.arch})`;
+  } catch (error) {
+    if (/wmic os get Caption/.test(error.message)) {
+      return "Windows <version undetectable>";
+    }
+
+    throw error;
+  }
+}
+
+exports.getUserAgent = getUserAgent;
+//# sourceMappingURL=index.js.map
+
 
 /***/ }),
 
@@ -7533,201 +7772,6 @@ module.exports = {"activity":{"checkStarringRepo":{"method":"GET","params":{"own
 
 /***/ }),
 
-/***/ 714:
-/***/ (function(module) {
-
-(function (root, factory) {
-    if (true) {
-        module.exports = factory();
-    } else {}
-}(this, function () {
-  /**
-   * @constructor
-   */
-  function UrlTemplate() {
-  }
-
-  /**
-   * @private
-   * @param {string} str
-   * @return {string}
-   */
-  UrlTemplate.prototype.encodeReserved = function (str) {
-    return str.split(/(%[0-9A-Fa-f]{2})/g).map(function (part) {
-      if (!/%[0-9A-Fa-f]/.test(part)) {
-        part = encodeURI(part).replace(/%5B/g, '[').replace(/%5D/g, ']');
-      }
-      return part;
-    }).join('');
-  };
-
-  /**
-   * @private
-   * @param {string} str
-   * @return {string}
-   */
-  UrlTemplate.prototype.encodeUnreserved = function (str) {
-    return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
-      return '%' + c.charCodeAt(0).toString(16).toUpperCase();
-    });
-  }
-
-  /**
-   * @private
-   * @param {string} operator
-   * @param {string} value
-   * @param {string} key
-   * @return {string}
-   */
-  UrlTemplate.prototype.encodeValue = function (operator, value, key) {
-    value = (operator === '+' || operator === '#') ? this.encodeReserved(value) : this.encodeUnreserved(value);
-
-    if (key) {
-      return this.encodeUnreserved(key) + '=' + value;
-    } else {
-      return value;
-    }
-  };
-
-  /**
-   * @private
-   * @param {*} value
-   * @return {boolean}
-   */
-  UrlTemplate.prototype.isDefined = function (value) {
-    return value !== undefined && value !== null;
-  };
-
-  /**
-   * @private
-   * @param {string}
-   * @return {boolean}
-   */
-  UrlTemplate.prototype.isKeyOperator = function (operator) {
-    return operator === ';' || operator === '&' || operator === '?';
-  };
-
-  /**
-   * @private
-   * @param {Object} context
-   * @param {string} operator
-   * @param {string} key
-   * @param {string} modifier
-   */
-  UrlTemplate.prototype.getValues = function (context, operator, key, modifier) {
-    var value = context[key],
-        result = [];
-
-    if (this.isDefined(value) && value !== '') {
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        value = value.toString();
-
-        if (modifier && modifier !== '*') {
-          value = value.substring(0, parseInt(modifier, 10));
-        }
-
-        result.push(this.encodeValue(operator, value, this.isKeyOperator(operator) ? key : null));
-      } else {
-        if (modifier === '*') {
-          if (Array.isArray(value)) {
-            value.filter(this.isDefined).forEach(function (value) {
-              result.push(this.encodeValue(operator, value, this.isKeyOperator(operator) ? key : null));
-            }, this);
-          } else {
-            Object.keys(value).forEach(function (k) {
-              if (this.isDefined(value[k])) {
-                result.push(this.encodeValue(operator, value[k], k));
-              }
-            }, this);
-          }
-        } else {
-          var tmp = [];
-
-          if (Array.isArray(value)) {
-            value.filter(this.isDefined).forEach(function (value) {
-              tmp.push(this.encodeValue(operator, value));
-            }, this);
-          } else {
-            Object.keys(value).forEach(function (k) {
-              if (this.isDefined(value[k])) {
-                tmp.push(this.encodeUnreserved(k));
-                tmp.push(this.encodeValue(operator, value[k].toString()));
-              }
-            }, this);
-          }
-
-          if (this.isKeyOperator(operator)) {
-            result.push(this.encodeUnreserved(key) + '=' + tmp.join(','));
-          } else if (tmp.length !== 0) {
-            result.push(tmp.join(','));
-          }
-        }
-      }
-    } else {
-      if (operator === ';') {
-        if (this.isDefined(value)) {
-          result.push(this.encodeUnreserved(key));
-        }
-      } else if (value === '' && (operator === '&' || operator === '?')) {
-        result.push(this.encodeUnreserved(key) + '=');
-      } else if (value === '') {
-        result.push('');
-      }
-    }
-    return result;
-  };
-
-  /**
-   * @param {string} template
-   * @return {function(Object):string}
-   */
-  UrlTemplate.prototype.parse = function (template) {
-    var that = this;
-    var operators = ['+', '#', '.', '/', ';', '?', '&'];
-
-    return {
-      expand: function (context) {
-        return template.replace(/\{([^\{\}]+)\}|([^\{\}]+)/g, function (_, expression, literal) {
-          if (expression) {
-            var operator = null,
-                values = [];
-
-            if (operators.indexOf(expression.charAt(0)) !== -1) {
-              operator = expression.charAt(0);
-              expression = expression.substr(1);
-            }
-
-            expression.split(/,/g).forEach(function (variable) {
-              var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-              values.push.apply(values, that.getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
-            });
-
-            if (operator && operator !== '+') {
-              var separator = ',';
-
-              if (operator === '?') {
-                separator = '&';
-              } else if (operator !== '#') {
-                separator = operator;
-              }
-              return (values.length !== 0 ? operator : '') + values.join(separator);
-            } else {
-              return values.join(',');
-            }
-          } else {
-            return that.encodeReserved(literal);
-          }
-        });
-      }
-    };
-  };
-
-  return new UrlTemplate();
-}));
-
-
-/***/ }),
-
 /***/ 742:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -7792,28 +7836,6 @@ function sync (path, options) {
 
 /***/ }),
 
-/***/ 746:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-module.exports = getUserAgentNode
-
-const osName = __webpack_require__(2)
-
-function getUserAgentNode () {
-  try {
-    return `Node.js/${process.version.substr(1)} (${osName()}; ${process.arch})`
-  } catch (error) {
-    if (/wmic os get Caption/.test(error.message)) {
-      return 'Windows <version undetectable>'
-    }
-
-    throw error
-  }
-}
-
-
-/***/ }),
-
 /***/ 747:
 /***/ (function(module) {
 
@@ -7832,7 +7854,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var endpoint = __webpack_require__(385);
-var getUserAgent = _interopDefault(__webpack_require__(261));
+var universalUserAgent = __webpack_require__(211);
 var isPlainObject = _interopDefault(__webpack_require__(696));
 var nodeFetch = _interopDefault(__webpack_require__(454));
 var requestError = __webpack_require__(463);
@@ -7963,11 +7985,12 @@ function withDefaults(oldEndpoint, newDefaults) {
 
 const request = withDefaults(endpoint.endpoint, {
   headers: {
-    "user-agent": `octokit-request.js/${VERSION} ${getUserAgent()}`
+    "user-agent": `octokit-request.js/${VERSION} ${universalUserAgent.getUserAgent()}`
   }
 });
 
 exports.request = request;
+//# sourceMappingURL=index.js.map
 
 
 /***/ }),
@@ -8035,28 +8058,6 @@ const getPage = __webpack_require__(265)
 
 function getFirstPage (octokit, link, headers) {
   return getPage(octokit, link, 'first', headers)
-}
-
-
-/***/ }),
-
-/***/ 794:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-module.exports = getUserAgentNode
-
-const osName = __webpack_require__(2)
-
-function getUserAgentNode () {
-  try {
-    return `Node.js/${process.version.substr(1)} (${osName()}; ${process.arch})`
-  } catch (error) {
-    if (/wmic os get Caption/.test(error.message)) {
-      return 'Windows <version undetectable>'
-    }
-
-    throw error
-  }
 }
 
 
@@ -9316,13 +9317,13 @@ const withAuthorizationPrefix = __webpack_require__(143)
 
 function authenticationBeforeRequest (state, options) {
   if (typeof state.auth === 'string') {
-    options.headers['authorization'] = withAuthorizationPrefix(state.auth)
+    options.headers.authorization = withAuthorizationPrefix(state.auth)
 
     // https://developer.github.com/v3/previews/#integrations
-    if (/^bearer /i.test(state.auth) && !/machine-man/.test(options.headers['accept'])) {
-      const acceptHeaders = options.headers['accept'].split(',')
+    if (/^bearer /i.test(state.auth) && !/machine-man/.test(options.headers.accept)) {
+      const acceptHeaders = options.headers.accept.split(',')
         .concat('application/vnd.github.machine-man-preview+json')
-      options.headers['accept'] = acceptHeaders.filter(Boolean).join(',')
+      options.headers.accept = acceptHeaders.filter(Boolean).join(',')
     }
 
     return
@@ -9330,7 +9331,7 @@ function authenticationBeforeRequest (state, options) {
 
   if (state.auth.username) {
     const hash = btoa(`${state.auth.username}:${state.auth.password}`)
-    options.headers['authorization'] = `Basic ${hash}`
+    options.headers.authorization = `Basic ${hash}`
     if (state.otp) {
       options.headers['x-github-otp'] = state.otp
     }
@@ -9350,7 +9351,7 @@ function authenticationBeforeRequest (state, options) {
     // as well as "/applications/123/tokens/token456"
     if (/\/applications\/:?[\w_]+\/tokens\/:?[\w_]+($|\?)/.test(options.url)) {
       const hash = btoa(`${state.auth.clientId}:${state.auth.clientSecret}`)
-      options.headers['authorization'] = `Basic ${hash}`
+      options.headers.authorization = `Basic ${hash}`
       return
     }
 
@@ -9366,7 +9367,7 @@ function authenticationBeforeRequest (state, options) {
     })
 
     .then((authorization) => {
-      options.headers['authorization'] = withAuthorizationPrefix(authorization)
+      options.headers.authorization = withAuthorizationPrefix(authorization)
     })
 }
 
@@ -9396,125 +9397,6 @@ module.exports = function (str) {
 		bin + (arg ? ' ' + arg : '')
 	);
 };
-
-
-/***/ }),
-
-/***/ 867:
-/***/ (function(module) {
-
-"use strict";
-
-
-var isMergeableObject = function isMergeableObject(value) {
-	return isNonNullObject(value)
-		&& !isSpecial(value)
-};
-
-function isNonNullObject(value) {
-	return !!value && typeof value === 'object'
-}
-
-function isSpecial(value) {
-	var stringValue = Object.prototype.toString.call(value);
-
-	return stringValue === '[object RegExp]'
-		|| stringValue === '[object Date]'
-		|| isReactElement(value)
-}
-
-// see https://github.com/facebook/react/blob/b5ac963fb791d1298e7f396236383bc955f916c1/src/isomorphic/classic/element/ReactElement.js#L21-L25
-var canUseSymbol = typeof Symbol === 'function' && Symbol.for;
-var REACT_ELEMENT_TYPE = canUseSymbol ? Symbol.for('react.element') : 0xeac7;
-
-function isReactElement(value) {
-	return value.$$typeof === REACT_ELEMENT_TYPE
-}
-
-function emptyTarget(val) {
-	return Array.isArray(val) ? [] : {}
-}
-
-function cloneUnlessOtherwiseSpecified(value, options) {
-	return (options.clone !== false && options.isMergeableObject(value))
-		? deepmerge(emptyTarget(value), value, options)
-		: value
-}
-
-function defaultArrayMerge(target, source, options) {
-	return target.concat(source).map(function(element) {
-		return cloneUnlessOtherwiseSpecified(element, options)
-	})
-}
-
-function getMergeFunction(key, options) {
-	if (!options.customMerge) {
-		return deepmerge
-	}
-	var customMerge = options.customMerge(key);
-	return typeof customMerge === 'function' ? customMerge : deepmerge
-}
-
-function getEnumerableOwnPropertySymbols(target) {
-	return Object.getOwnPropertySymbols
-		? Object.getOwnPropertySymbols(target).filter(function(symbol) {
-			return target.propertyIsEnumerable(symbol)
-		})
-		: []
-}
-
-function getKeys(target) {
-	return Object.keys(target).concat(getEnumerableOwnPropertySymbols(target))
-}
-
-function mergeObject(target, source, options) {
-	var destination = {};
-	if (options.isMergeableObject(target)) {
-		getKeys(target).forEach(function(key) {
-			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
-		});
-	}
-	getKeys(source).forEach(function(key) {
-		if (!options.isMergeableObject(source[key]) || !target[key]) {
-			destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
-		} else {
-			destination[key] = getMergeFunction(key, options)(target[key], source[key], options);
-		}
-	});
-	return destination
-}
-
-function deepmerge(target, source, options) {
-	options = options || {};
-	options.arrayMerge = options.arrayMerge || defaultArrayMerge;
-	options.isMergeableObject = options.isMergeableObject || isMergeableObject;
-
-	var sourceIsArray = Array.isArray(source);
-	var targetIsArray = Array.isArray(target);
-	var sourceAndTargetTypesMatch = sourceIsArray === targetIsArray;
-
-	if (!sourceAndTargetTypesMatch) {
-		return cloneUnlessOtherwiseSpecified(source, options)
-	} else if (sourceIsArray) {
-		return options.arrayMerge(target, source, options)
-	} else {
-		return mergeObject(target, source, options)
-	}
-}
-
-deepmerge.all = function deepmergeAll(array, options) {
-	if (!Array.isArray(array)) {
-		throw new Error('first argument should be an array')
-	}
-
-	return array.reduce(function(prev, next) {
-		return deepmerge(prev, next, options)
-	}, {})
-};
-
-var deepmerge_1 = deepmerge;
-
-module.exports = deepmerge_1;
 
 
 /***/ }),
